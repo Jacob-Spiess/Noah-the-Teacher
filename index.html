@@ -1,0 +1,400 @@
+<!-- 
+German Vocabulary Trainer
+-----------------
+License : Apache 2.0 License
+Author  : 
+URL     : 
+GitHub  : 
+-->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>노아 선생님</title>
+  <style>
+    :root{--bg:#0f172a;--card:#0b1220;--accent:#06b6d4;--muted:#94a3b8;--glass: rgba(255,255,255,0.03)}
+    *{box-sizing:border-box}
+    html{min-height:100%}
+    body{font-family:Inter,ui-sans-serif,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial; margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center; background:url("img/background3.png") top center/cover no-repeat; background-attachment:fixed; color:#e6eef6}
+    .app{width:920px; max-width:96%; background:rgba(11,18,32,0.92); padding:28px; border-radius:14px; box-shadow:0 10px 30px rgba(2,6,23,0.6);}
+    .entry-area{background:rgba(255,255,255,0.04); border-radius:16px; padding:20px; margin-bottom:14px;}
+    h1{margin:0 0 8px; font-size:20px}
+    .meta{display:flex; gap:12px; align-items:center; margin-bottom:18px}
+    .meta .stat{background:var(--glass); padding:10px 14px; border-radius:10px; color:var(--muted);} 
+    .sentence{background:rgba(255,255,255,0.06); padding:18px; border-radius:10px; min-height:72px; font-size:18px; line-height:1.45; margin-bottom:14px}
+    .sentence .correct{color:#9ae6b4}
+    .sentence .wrong{color:#feb2b2; text-decoration:underline wavy}
+    textarea.input, input.input{width:100%; min-height:100px; resize:none; padding:12px; border-radius:10px; border:1px solid rgba(255,255,255,0.04); background:transparent; color:inherit; font-size:16px}
+    .topbar{display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:12px}
+    .controls{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+    .control-group{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+    button{background:var(--accent); border:none; color:#042026; padding:8px 14px; border-radius:10px; cursor:pointer; font-weight:600}
+    select{background:transparent; border-radius:8px; padding:8px; color:inherit; border:1px solid rgba(255,255,255,0.04)}
+    .results{display:flex; gap:12px; margin-top:14px}
+    .results .card{background:var(--glass); padding:12px; border-radius:8px; min-width:120px; text-align:center}
+    .summary{background:rgba(255,255,255,0.04); border-radius:12px; padding:12px 14px; margin-top:14px; max-height:260px; overflow:auto; font-size:14px; line-height:1.4}
+    .summary h2{margin:0 0 10px; font-size:16px}
+    .summary .item{padding:6px 10px; margin-bottom:6px; border-radius:8px;}
+    .summary .item.correct{background:rgba(154,230,180,0.16)}
+    .summary .item.wrong{background:rgba(254,178,178,0.16)}
+    .summary .item strong{display:inline; font-weight:700; margin-right:6px;}
+    .summary .item span{display:inline; color:var(--muted); margin-left:6px;}
+    .popup-overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.7);z-index:9999;opacity:0;pointer-events:none;transition:opacity .2s ease}
+    .popup-overlay.visible{opacity:1;pointer-events:auto}
+    .popup-card{background:rgba(15,23,42,.96);border-radius:18px;padding:18px 20px;max-width:92%;max-height:90%;display:flex;flex-direction:column;align-items:center;gap:12px;box-shadow:0 20px 60px rgba(0,0,0,.55)}
+    .popup-card img{max-width:100%;max-height:65vh;border-radius:12px;object-fit:contain}
+    .popup-card p{margin:0;color:#e6eef6;font-size:15px;text-align:center}
+    .results .card{background:var(--glass); padding:12px; border-radius:8px; min-width:120px; text-align:center}
+    .small{font-size:12px; color:var(--muted)}
+    footer{margin-top:14px; font-size:13px; color:var(--muted)}
+    @media (max-width:560px){.meta{flex-direction:column; align-items:flex-start}}
+  </style>
+</head>
+<body>
+  <main class="app" role="main">
+    <h1>노아 선생님</h1>
+    <div class="meta">
+      <div class="stat"><strong id="timer">0</strong> s</div>
+      <div class="stat"><strong id="accuracy">100</strong>% accuracy</div>
+    </div>
+
+    <div class="entry-area">
+      <div id="sentence" class="sentence" aria-live="polite">Press Start to begin the translation quiz.</div>
+
+      <input id="input" class="input" type="text" placeholder="Type the German translation here..." aria-label="Translation input" autocomplete="off" />
+
+      <div class="topbar">
+        <div class="control-group">
+        <label class="small">Category:
+          <select id="category">
+            <option value="schule" selected>Schule / 학교</option>
+            <option value="obst">Obst / 과일</option>
+            <option value="gemuese">Gemüse / 채소</option>
+            <option value="tiere">Tiere / 동물</option>
+            <option value="familie">Familie / 가족</option>
+            <option value="kleidung">Kleidung / 옷</option>
+            <option value="zuhause">Zuhause / Haus / 집 / 가정</option>
+            <option value="essen">Essen & Trinken / 음식 & 음료</option>
+            <option value="koerper">Körper / 신체</option>
+            <option value="farben">Farben / 색깔</option>
+            <option value="berufe">Berufe / 직업</option>
+            <option value="reisen">Reisen & Verkehr / 여행 & 교통</option>
+            <option value="natur">Natur & Wetter / 자연 & 날씨</option>
+            <option value="zeit">Zeit & Datum / 시간 & 날짜</option>
+            <option value="adjektive">Adjektive / 형용사</option>
+            <option value="verben">Verben / 동사</option>
+            <option value="technologie">Technologie / 기술</option>
+            <option value="sport">Sport & Hobby / 스포츠 & 취미</option>
+            <option value="medizin">Medizin & Gesundheit / 의학 & 건강</option>
+            <option value="gefuehle">Gefühle & Emotionen / 감정</option>
+          </select>
+        </label>
+
+        <label class="small">Mode:
+          <select id="mode">
+            <option value="words" selected>10 Words Test</option>
+            <option value="time">30s Time Trial</option>
+          </select>
+        </label>
+
+        <label class="small">Direction:
+          <select id="direction">
+            <option value="kr-de" selected>Korean → German</option>
+            <option value="de-kr">German → Korean</option>
+          </select>
+        </label>
+      </div>
+
+      <button id="start">Start</button>
+    </div>
+
+    <div class="results" aria-hidden="false">
+      <div class="card"><div class="small">Progress</div><strong id="progress">0 / 10</strong></div>
+      <div class="card"><div class="small">Correct</div><strong id="correct">0</strong></div>
+      <div class="card"><div class="small">Wrong</div><strong id="wrong">0</strong></div>
+    </div>
+
+      <div id="summary" class="summary" aria-live="polite" style="display:none"></div>
+    </div>
+    <div id="scorePopup" class="popup-overlay" aria-hidden="true">
+      <div class="popup-card">
+        <img id="scorePopupImage" src="" alt="Score reward image" />
+        <p id="scorePopupText">Great work!</p>
+      </div>
+    </div>
+
+    <footer>Tip: Enter the correct German translation of the Korean word and press Enter. Start again to rehearse another set.</footer>
+  </main>
+
+  <script src="vocabulary.js"></script>
+  <script>
+    // German Vocabulary Trainer (vanilla JS)
+    const sentenceEl = document.getElementById('sentence');
+    const inputEl = document.getElementById('input');
+    const startBtn = document.getElementById('start');
+    const timerEl = document.getElementById('timer');
+    const accuracyEl = document.getElementById('accuracy');
+    const progressEl = document.getElementById('progress');
+    const correctEl = document.getElementById('correct');
+    const wrongEl = document.getElementById('wrong');
+
+    const modeEl = document.getElementById('mode');
+    const directionEl = document.getElementById('direction');
+    const categoryEl = document.getElementById('category');
+    const summaryEl = document.getElementById('summary');
+    const scorePopupEl = document.getElementById('scorePopup');
+    const scorePopupImg = document.getElementById('scorePopupImage');
+    const scorePopupText = document.getElementById('scorePopupText');
+
+    let timer = null;
+    let timeLeft = 30;
+    let started = false;
+    let hasPlayed = false;
+    let currentQuestion = null;
+    let questionIndex = 0;
+    let answeredCount = 0;
+    let correctCount = 0;
+    let wrongCount = 0;
+    let questions = [];
+    let history = [];
+
+    function getQuestionPool() {
+      const list = vocabulary[categoryEl.value] || vocabulary.schule;
+      const pool = [...list];
+      const selection = [];
+      while (selection.length < 10) {
+        if (!pool.length) pool.push(...list);
+        const index = Math.floor(Math.random() * pool.length);
+        selection.push(pool.splice(index, 1)[0]);
+      }
+      return selection;
+    }
+
+    function setPrompt(text, subtitle = '') {
+      sentenceEl.innerHTML = `<div><strong>${text}</strong></div>${subtitle ? `<div class="small">${subtitle}</div>` : ''}`;
+    }
+
+    function updateInputPlaceholder() {
+      if (directionEl.value === 'kr-de') {
+        inputEl.placeholder = 'Type the German translation here...';
+      } else {
+        inputEl.placeholder = 'Type the Korean translation here...';
+      }
+    }
+
+    function updateStartButton() {
+      startBtn.textContent = hasPlayed ? 'Restart' : 'Start';
+    }
+
+    function resetGame() {
+      clearInterval(timer);
+      timer = null;
+      started = false;
+      currentQuestion = null;
+      questionIndex = 0;
+      answeredCount = 0;
+      correctCount = 0;
+      wrongCount = 0;
+      questions = [];
+      history = [];
+      inputEl.value = '';
+      inputEl.disabled = true;
+      summaryEl.style.display = 'none';
+      summaryEl.innerHTML = '';
+      timerEl.textContent = '0';
+      progressEl.textContent = '0 / 10';
+      correctEl.textContent = '0';
+      wrongEl.textContent = '0';
+      accuracyEl.textContent = '100';
+      updateStartButton();
+      updateInputPlaceholder();
+      setPrompt('Press Start to begin the translation quiz.', directionEl.value === 'kr-de' ? 'Translate the Korean word into German.' : 'Translate the German word into Korean.');
+    }
+
+    function startGame() {
+      resetGame();
+      hasPlayed = true;
+      updateStartButton();
+      questions = getQuestionPool();
+      if (modeEl.value === 'time') {
+        timeLeft = 30;
+        timerEl.textContent = timeLeft;
+      }
+      started = true;
+      inputEl.disabled = false;
+      nextQuestion();
+      inputEl.focus();
+      if (modeEl.value === 'time') {
+        timer = setInterval(() => {
+          timeLeft -= 1;
+          timerEl.textContent = timeLeft;
+          if (timeLeft <= 0) endGame();
+        }, 1000);
+      }
+    }
+
+    function nextQuestion() {
+      if (modeEl.value === 'words' && questionIndex >= questions.length) {
+        endGame();
+        return;
+      }
+      if (modeEl.value === 'time') {
+        const list = vocabulary[categoryEl.value] || vocabulary.schule;
+        currentQuestion = list[Math.floor(Math.random() * list.length)];
+      } else {
+        currentQuestion = questions[questionIndex];
+      }
+      questionIndex += 1;
+      const direction = directionEl.value;
+      const promptText = direction === 'kr-de' ? currentQuestion.kr : currentQuestion.de;
+      const subtitle = direction === 'kr-de' ? 'Translate into German' : 'Translate into Korean';
+      setPrompt(promptText, subtitle);
+      inputEl.value = '';
+      sentenceEl.classList.remove('correct', 'wrong');
+      updateResults();
+    }
+
+    function updateResults() {
+      progressEl.textContent = modeEl.value === 'words'
+        ? `${Math.min(questionIndex, questions.length)} / ${questions.length}`
+        : `${answeredCount} answered`;
+      correctEl.textContent = correctCount;
+      wrongEl.textContent = wrongCount;
+      accuracyEl.textContent = answeredCount ? Math.round((correctCount / answeredCount) * 100) : 100;
+    }
+
+    function submitAnswer() {
+      if (!started || !currentQuestion) return;
+      const answer = inputEl.value.trim();
+      if (!answer) return;
+      answeredCount += 1;
+      const direction = directionEl.value;
+      const expected = direction === 'kr-de' ? currentQuestion.de : currentQuestion.kr;
+      const promptText = direction === 'kr-de' ? currentQuestion.kr : currentQuestion.de;
+      const subtitleCorrect = direction === 'kr-de' ? 'Correct! Translate the next Korean word.' : 'Correct! Translate the next German word.';
+      const subtitleWrong = direction === 'kr-de' ? 'Wrong answer — correct German translation shown.' : 'Wrong answer — correct Korean translation shown.';
+      const normalizedAnswer = answer.toLowerCase();
+      const normalizedExpected = expected.toLowerCase();
+      const isCorrect = normalizedAnswer === normalizedExpected;
+      history.push({
+        prompt: promptText,
+        answer,
+        expected,
+        correct: isCorrect,
+        direction
+      });
+      if (isCorrect) {
+        correctCount += 1;
+        sentenceEl.classList.remove('wrong');
+        sentenceEl.classList.add('correct');
+        setPrompt(promptText, subtitleCorrect);
+      } else {
+        wrongCount += 1;
+        sentenceEl.classList.remove('correct');
+        sentenceEl.classList.add('wrong');
+        setPrompt(`${promptText} — ${expected}`, subtitleWrong);
+      }
+      updateResults();
+      if (modeEl.value === 'words' && questionIndex >= questions.length) {
+        endGame();
+        return;
+      }
+      setTimeout(() => {
+        if (started) nextQuestion();
+      }, 800);
+    }
+
+    function renderSummary() {
+      if (!history.length) {
+        summaryEl.innerHTML = '<h2>Quiz summary</h2><p>No answers were recorded.</p>';
+        summaryEl.style.display = 'block';
+        return;
+      }
+      const correctItems = history.filter(item => item.correct);
+      const wrongItems = history.filter(item => !item.correct);
+      const summaryTitle = `<h2>Quiz summary</h2><p>${correctItems.length} correct, ${wrongItems.length} wrong.</p>`;
+      const itemHtml = history.map((item, index) => {
+        const promptLabel = item.direction === 'kr-de' ? item.prompt : item.prompt;
+        const expected = item.expected;
+        const answerPart = item.correct ? '' : ` <span>(your answer: ${item.answer})</span>`;
+        return `<div class="item ${item.correct ? 'correct' : 'wrong'}"><strong>${index + 1}. ${promptLabel} — ${expected}</strong>${answerPart}</div>`;
+      }).join('');
+      summaryEl.innerHTML = `${summaryTitle}${itemHtml}`;
+      summaryEl.style.display = 'block';
+    }
+
+    function showScorePopup(score) {
+      const candidates = score === 0
+        ? ['img/0.JPG', 'img/0.jpg', 'img/0.png']
+        : score <= 4
+          ? ['img/1-4.JPG', 'img/1-4.jpg', 'img/1-4.png']
+          : score <= 6
+            ? ['img/5-6.JPG', 'img/5-6.jpg', 'img/5-6.png']
+            : score <= 8
+              ? ['img/7-8.JPG', 'img/7-8.jpg', 'img/7-8.png']
+              : ['img/9-10.JPG', 'img/9-10.jpg', 'img/9-10.png'];
+      if (!candidates.length) return;
+
+      const message = score === 0
+        ? 'No correct answers. Try again!'
+        : score <= 4
+          ? 'Keep going!'
+          : score <= 6
+            ? 'Nice work!'
+            : score <= 8
+              ? 'Great job!'
+              : 'Excellent score!';
+
+      let nextIndex = 0;
+      scorePopupImg.alt = message;
+      scorePopupText.textContent = message;
+
+      scorePopupImg.onerror = () => {
+        if (nextIndex < candidates.length) {
+          scorePopupImg.src = candidates[nextIndex++];
+        } else {
+          scorePopupEl.classList.remove('visible');
+        }
+      };
+
+      scorePopupImg.onload = () => {
+        scorePopupEl.classList.add('visible');
+        if (scorePopupEl.hideTimeout) {
+          clearTimeout(scorePopupEl.hideTimeout);
+        }
+        scorePopupEl.hideTimeout = setTimeout(() => {
+          scorePopupEl.classList.remove('visible');
+        }, 3000);
+      };
+
+      scorePopupImg.src = candidates[nextIndex++];
+    }
+
+    function endGame() {
+      clearInterval(timer);
+      timer = null;
+      started = false;
+      inputEl.disabled = true;
+      setPrompt('Quiz completed!', `Score: ${correctCount} correct, ${wrongCount} wrong.`);
+      updateResults();
+      renderSummary();
+      showScorePopup(correctCount);
+    }
+
+    startBtn.addEventListener('click', startGame);
+    directionEl.addEventListener('change', updateInputPlaceholder);
+
+    inputEl.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        submitAnswer();
+      }
+    });
+
+    resetGame();
+
+    sentenceEl.addEventListener('click', () => inputEl.focus());
+  </script>
+</body>
+</html>
